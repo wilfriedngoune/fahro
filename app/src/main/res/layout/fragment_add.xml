@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:layout_marginTop="35dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/addTitle"
+            android:text="Add new trip"
+            android:textSize="25sp"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Departure date -->
+        <EditText
+            android:id="@+id/inputDate"
+            android:hint="Departure date (e.g. 2025-12-24)"
+            android:background="@drawable/bg_search_bar"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <!-- Departure time -->
+        <EditText
+            android:id="@+id/inputTime"
+            android:hint="Departure time (e.g. 08:30)"
+            android:background="@drawable/bg_search_bar"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <!-- Departure address -->
+        <EditText
+            android:id="@+id/inputDeparture"
+            android:hint="Departure address"
+            android:background="@drawable/bg_search_bar"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <!-- Arrival address -->
+        <EditText
+            android:id="@+id/inputArrival"
+            android:hint="Arrival address"
+            android:background="@drawable/bg_search_bar"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
+        <!-- Add stop link -->
+        <TextView
+            android:id="@+id/textAddStop"
+            android:text="+ Add a stop"
+            android:textColor="#004CD8"
+            android:textStyle="bold"
+            android:textSize="17dp"
+            android:layout_marginTop="26dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Stop form (initially hidden) -->
+        <LinearLayout
+            android:id="@+id/addStopForm"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_box_gray_rounded"
+            android:padding="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/inputStopAddress"
+                android:hint="Stop address"
+                android:background="@drawable/bg_search_bar"
+                android:padding="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="50dp" />
+
+            <Button
+                android:id="@+id/buttonConfirmStop"
+                android:text="Confirm stop"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:background="@drawable/bg_button_rounded"
+                android:layout_marginTop="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- Stops list title -->
+        <TextView
+            android:id="@+id/stopsTitle"
+            android:text="Stops added"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="20dp"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Stops container -->
+        <LinearLayout
+            android:id="@+id/stopsContainer"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Add trip button -->
+        <Button
+            android:id="@+id/buttonAddTrip"
+            android:text="Add trip"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:background="@drawable/bg_button_rounded"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="24dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</ScrollView>

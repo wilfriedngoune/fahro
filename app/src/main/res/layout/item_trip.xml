@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_card_rounded"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- Avatar du chauffeur -->
+    <ImageView
+        android:id="@+id/driverAvatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:clipToOutline="true"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_avatar_round"
+        android:src="@drawable/ic_profile" />
+
+    <!-- Contenu texte -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_marginStart="16dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <!-- Ligne 1 : nom à gauche, étoiles à droite -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/driverName"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <!-- Bloc rating -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/ratingStar"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_star_yellow" />
+
+                <TextView
+                    android:id="@+id/ratingText"
+                    android:layout_marginStart="4dp"
+                    android:textSize="14sp"
+                    android:textColor="#FFA000"
+                    android:text="4.8"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Ligne 2 : heure -->
+        <TextView
+            android:id="@+id/time"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <!-- Ligne 3 : adresse -->
+        <TextView
+            android:id="@+id/address"
+            android:textSize="14sp"
+            android:textColor="#666"
+            android:layout_marginTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+</LinearLayout>
