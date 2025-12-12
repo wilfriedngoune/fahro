@@ -30,7 +30,7 @@
         android:layout_below="@id/username"
         android:layout_toRightOf="@id/avatar"
         android:layout_marginStart="12dp"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:textColor="#777"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
