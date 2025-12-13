@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.fahr.R
+import com.example.fahr.core.UserSession
 import com.example.fahr.databinding.ActivityMainBinding
 import com.example.fahr.ui.main.add.AddFragment
 import com.example.fahr.ui.main.chat.ChatFragment
@@ -18,6 +19,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // dans onCreate de MainActivity, après setContentView
+        UserSession.setCurrentUserId(this, "2")
+
 
         // Default fragment
         openFragment(SearchFragment())

@@ -1,15 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // On applique le plugin Google Services pour ce module
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.example.fahr"
     compileSdk = 36
-
-    buildFeatures {
-        viewBinding = true
-    }
 
     defaultConfig {
         applicationId = "com.example.fahr"
@@ -19,6 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 
     buildTypes {
@@ -47,7 +49,15 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-    implementation("androidx.viewpager2:viewpager2:1.0.0") // IMPORTANT
+
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
+
+    // 🔹 Firebase BoM (plateforme de versions)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+
+    // 🔹 Firestore KTX (sans version, gérée par le BoM)
+    implementation("com.google.firebase:firebase-firestore-ktx")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

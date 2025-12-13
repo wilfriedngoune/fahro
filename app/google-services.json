@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "21776405006",
+    "project_id": "fahrgemeinschaft-b8656",
+    "storage_bucket": "fahrgemeinschaft-b8656.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:21776405006:android:385f4caa153564fbc4e25f",
+        "android_client_info": {
+          "package_name": "com.example.fahr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJp8ahoYZMlOqp0fwXCaSRZrKvP0bYVdU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

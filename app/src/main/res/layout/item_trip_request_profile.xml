@@ -1,66 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
-    android:padding="8dp"
-    android:layout_marginBottom="8dp"
+    android:padding="12dp"
+    android:background="@drawable/bg_box_gray_rounded"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp">
 
     <ImageView
         android:id="@+id/avatar"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:clipToOutline="true"
-        android:scaleType="centerCrop"
         android:background="@drawable/bg_avatar_round"
+        android:scaleType="centerCrop"
         android:src="@drawable/ic_profile" />
 
     <LinearLayout
         android:orientation="vertical"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:layout_height="wrap_content">
 
         <TextView
             android:id="@+id/name"
-            android:text="Thomas"
+            android:text="Nelson"
             android:textStyle="bold"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/route"
             android:text="Roseneck 8a -> TU Clausthal"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/time"
             android:text="12:12 - 12:30"
-            android:textSize="12sp"
-            android:textColor="#666666"
+            android:textSize="14sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/price"
             android:text="Price: €3.50"
-            android:textSize="12sp"
-            android:textColor="#004CD8"
+            android:textSize="14sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/buttonAccept"
+            android:text="Accept"
+            android:textAllCaps="false"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/buttonRefuse"
+            android:text="Refuse"
+            android:textAllCaps="false"
+            android:layout_marginTop="4dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-    <Button
-        android:id="@+id/buttonAccept"
-        android:text="Accept"
-        android:textAllCaps="false"
-        android:textSize="13sp"
-        android:textColor="@android:color/white"
-        android:background="@drawable/bg_button_rounded"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 </LinearLayout>

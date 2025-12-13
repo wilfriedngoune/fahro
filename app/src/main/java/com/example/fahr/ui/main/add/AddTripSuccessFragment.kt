@@ -33,7 +33,6 @@ class AddTripSuccessFragment : Fragment() {
     ): View {
         binding = FragmentAddTripSuccessBinding.inflate(inflater, container, false)
 
-        // Récupérer le payload (optionnel, juste pour affichage)
         val payload = arguments?.getSerializable(ARG_TRIP_PAYLOAD) as? TripPayload
 
         payload?.let {
@@ -48,6 +47,7 @@ class AddTripSuccessFragment : Fragment() {
                 Time: ${it.departureTime}
                 From: ${it.departureAddress}
                 To: ${it.arrivalAddress}
+                Price: €${"%.2f".format(it.price)}
                 
                 Stops:
                 $stopsText
@@ -57,7 +57,7 @@ class AddTripSuccessFragment : Fragment() {
         }
 
         binding.buttonBackHome.setOnClickListener {
-            // Retour à la page d'accueil (SearchFragment)
+            // Retour à la page Search
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, SearchFragment())
                 .commit()

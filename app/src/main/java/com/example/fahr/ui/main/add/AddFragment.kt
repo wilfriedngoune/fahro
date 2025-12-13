@@ -11,11 +11,19 @@ import androidx.fragment.app.Fragment
 import com.example.fahr.R
 import com.example.fahr.databinding.FragmentAddBinding
 import com.example.fahr.ui.main.add.model.TripPayload
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class AddFragment : Fragment() {
 
     private lateinit var binding: FragmentAddBinding
     private val stops = mutableListOf<String>()
+
+    // Firestore instance (using KTX)
+    private val firestore by lazy {
+        Firebase.firestore
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -91,33 +99,73 @@ class AddFragment : Fragment() {
             if (stops.isEmpty()) View.GONE else View.VISIBLE
     }
 
+    /**
+     * Validate form, build payload and send to Firestore.
+     */
     private fun createTrip() {
         val date = binding.inputDate.text.toString().trim()
         val time = binding.inputTime.text.toString().trim()
         val dep = binding.inputDeparture.text.toString().trim()
         val arr = binding.inputArrival.text.toString().trim()
+        val priceText = binding.inputPrice.text.toString().trim()
 
-        if (date.isEmpty() || time.isEmpty() || dep.isEmpty() || arr.isEmpty()) {
+        if (date.isEmpty() || time.isEmpty() || dep.isEmpty() || arr.isEmpty() || priceText.isEmpty()) {
             Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Build payload ready for backend
+        val price = priceText.toDoubleOrNull()
+        if (price == null || price <= 0.0) {
+            Toast.makeText(requireContext(), "Please enter a valid price", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Build payload (for UI / success screen)
         val payload = TripPayload(
             departureDate = date,
             departureTime = time,
             departureAddress = dep,
             arrivalAddress = arr,
-            stops = stops.toList()
+            stops = stops.toList(),
+            price = price
         )
 
-        // TODO: send payload to backend when ready
+        // Disable button to avoid multiple taps
+        binding.buttonAddTrip.isEnabled = false
 
-        val successFragment = AddTripSuccessFragment.newInstance(payload)
+        // Build Firestore document
+        val tripMap = hashMapOf(
+            "departureDate" to date,
+            "departureTime" to time,
+            "departureAddress" to dep,
+            "arrivalAddress" to arr,
+            "stops" to stops.toList(),
+            "price" to price,
+            // plus tard tu mettras l'ID du user Firebase ici
+            "driverId" to "demo_driver_1",
+            "createdAt" to FieldValue.serverTimestamp()
+        )
 
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, successFragment)
-            .addToBackStack(null)
-            .commit()
+        // Save to Firestore in "trips" collection
+        firestore.collection("trips")
+            .add(tripMap)
+            .addOnSuccessListener { docRef ->
+                Toast.makeText(requireContext(), "Trip saved!", Toast.LENGTH_SHORT).show()
+
+                val successFragment = AddTripSuccessFragment.newInstance(payload)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragmentContainer, successFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+            .addOnFailureListener { e ->
+                e.printStackTrace()
+                Toast.makeText(
+                    requireContext(),
+                    "Error saving trip: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+                binding.buttonAddTrip.isEnabled = true
+            }
     }
 }

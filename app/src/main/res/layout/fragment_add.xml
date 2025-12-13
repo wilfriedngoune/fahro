@@ -60,6 +60,17 @@
             android:layout_width="match_parent"
             android:layout_height="50dp" />
 
+        <!-- Price per seat -->
+        <EditText
+            android:id="@+id/inputPrice"
+            android:hint="Price per seat (€)"
+            android:inputType="numberDecimal"
+            android:background="@drawable/bg_search_bar"
+            android:padding="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp" />
+
         <!-- Add stop link -->
         <TextView
             android:id="@+id/textAddStop"

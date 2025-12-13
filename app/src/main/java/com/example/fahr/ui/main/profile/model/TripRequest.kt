@@ -1,3 +1,4 @@
+// TripRequest.kt
 package com.example.fahr.ui.main.profile.model
 
 data class TripRequest(
