@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="match_parent">
 
-    <!-- Title TextView -->
+    <!-- Title -->
     <TextView
         android:text="Messages"
         android:textSize="25sp"
@@ -18,7 +17,7 @@
         android:layout_height="wrap_content"
         android:textStyle="bold" />
 
-    <!-- Inner LinearLayout for Search Bar and RecyclerView -->
+    <!-- Inner layout -->
     <LinearLayout
         android:orientation="vertical"
         android:padding="16dp"
@@ -36,6 +35,17 @@
             android:layout_height="48dp"
             android:layout_marginBottom="16dp"
             android:drawablePadding="8dp" />
+
+        <!-- Empty text -->
+        <TextView
+            android:id="@+id/emptyText"
+            android:text="No discussions yet"
+            android:textColor="#888888"
+            android:visibility="gone"
+            android:layout_marginTop="16dp"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:layout_height="wrap_content" />
 
         <!-- List of conversations -->
         <androidx.recyclerview.widget.RecyclerView

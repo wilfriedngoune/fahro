@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:layout_marginTop="40dp">
 
-    <!-- TOP BAR WITH BACK BUTTON + USERNAME -->
+    <!-- TOP BAR -->
     <LinearLayout
         android:id="@+id/topBar"
         android:orientation="horizontal"
@@ -14,7 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Back button -->
         <ImageView
             android:id="@+id/backButton"
             android:src="@drawable/back"
@@ -24,7 +23,6 @@
             android:padding="4dp"
             android:layout_marginEnd="12dp" />
 
-        <!-- Chat title -->
         <TextView
             android:id="@+id/chatTitle"
             android:text="Chat"
@@ -34,6 +32,17 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
+    <!-- Empty messages text -->
+    <TextView
+        android:id="@+id/emptyMessagesText"
+        android:text="No messages yet"
+        android:textColor="#888888"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center" />
+
     <!-- Message list -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/messagesList"
@@ -42,7 +51,7 @@
         android:layout_weight="1"
         android:padding="12dp" />
 
-    <!-- Input area -->
+    <!-- Input -->
     <LinearLayout
         android:orientation="horizontal"
         android:padding="12dp"

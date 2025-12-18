@@ -7,7 +7,7 @@ import com.example.fahr.databinding.ItemChatPreviewBinding
 import com.example.fahr.ui.main.chat.model.ChatPreview
 
 class ChatAdapter(
-    private val chats: List<ChatPreview>,
+    private val chats: MutableList<ChatPreview>,
     private val onClick: (ChatPreview) -> Unit
 ) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
@@ -34,5 +34,11 @@ class ChatAdapter(
         holder.itemView.setOnClickListener {
             onClick(chat)
         }
+    }
+
+    fun updateData(newList: List<ChatPreview>) {
+        chats.clear()
+        chats.addAll(newList)
+        notifyDataSetChanged()
     }
 }

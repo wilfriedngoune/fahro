@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         // dans onCreate de MainActivity, après setContentView
-        UserSession.setCurrentUserId(this, "2")
+        UserSession.setCurrentUserId(this, "1")
 
 
         // Default fragment

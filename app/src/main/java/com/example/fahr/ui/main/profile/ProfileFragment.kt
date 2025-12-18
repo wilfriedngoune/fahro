@@ -20,6 +20,7 @@ import com.example.fahr.ui.main.profile.model.TripRequest
 import com.example.fahr.ui.main.profile.model.UserProfile
 import com.example.fahr.ui.main.search.model.TripDocument
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -29,7 +30,6 @@ class ProfileFragment : Fragment() {
     private lateinit var binding: FragmentProfileBinding
     private val firestore by lazy { FirebaseFirestore.getInstance() }
 
-    // Pour afficher createdAt proprement
     private val dateTimeFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
     override fun onCreateView(
@@ -63,15 +63,15 @@ class ProfileFragment : Fragment() {
 
         // Logout
         binding.buttonLogout.setOnClickListener {
-            // TODO: clear session: UserSession.setCurrentUserId(context, null)
+            // TODO: clear session
             Toast.makeText(requireContext(), "Logout clicked (dummy)", Toast.LENGTH_SHORT).show()
         }
 
-        // Charger les données Firestore
+        // Chargement des données
         loadUserProfile()
         loadTripRequests()   // bookings où driverId == currentUserId & status == "pending"
         loadBookedTrips()    // bookings où passengerId == currentUserId
-        loadMyTrips()        // trips créés par currentUser
+        loadMyTrips()        // trips créés par l'utilisateur
 
         return binding.root
     }
@@ -159,12 +159,6 @@ class ProfileFragment : Fragment() {
             }
     }
 
-    /**
-     * Pour chaque booking où je suis driver, on va chercher:
-     *  - le trip (trips/{tripId})
-     *  - le passager (users/{passengerId})
-     * et on construit une liste de TripRequest pour l’UI.
-     */
     private fun buildTripRequestsFromBookings(bookingDocs: List<DocumentSnapshot>) {
         if (bookingDocs.isEmpty() || !isAdded) return
 
@@ -199,7 +193,7 @@ class ProfileFragment : Fragment() {
                 continue
             }
 
-            // 1) Charger le trip
+            // 1) Trip
             firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -210,7 +204,6 @@ class ProfileFragment : Fragment() {
                         return@addOnSuccessListener
                     }
 
-                    // Estimation heure d’arrivée pour l’affichage
                     val distance = LocationUtils.distanceBetweenAddresses(
                         ctx,
                         trip.departureAddress,
@@ -221,7 +214,7 @@ class ProfileFragment : Fragment() {
                     } else 30
                     val arrivalTime = LocationUtils.addMinutesToTime(trip.departureTime, travelMinutes)
 
-                    // 2) Charger le passager
+                    // 2) Passager
                     firestore.collection("users")
                         .document(passengerId)
                         .get()
@@ -232,6 +225,8 @@ class ProfileFragment : Fragment() {
 
                             val req = TripRequest(
                                 id = bookingId,
+                                tripId = tripId,
+                                passengerId = passengerId,
                                 name = name,
                                 avatarResId = avatarResId,
                                 departure = trip.departureAddress,
@@ -278,7 +273,7 @@ class ProfileFragment : Fragment() {
             price.text = "Price: ${req.price}"
 
             buttonAccept.setOnClickListener {
-                updateBookingStatus(req.id, "accepted") {
+                acceptBooking(req) {
                     buttonAccept.text = "Accepted"
                     buttonAccept.isEnabled = false
                     buttonRefuse.isEnabled = false
@@ -297,6 +292,52 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    /**
+     * Quand on accepte une demande :
+     *  - on met le booking en "accepted"
+     *  - on crée une discussion vide (si elle n'existe pas déjà)
+     */
+    private fun acceptBooking(req: TripRequest, onSuccessUI: () -> Unit) {
+        val driverId = UserSession.getCurrentUserId(requireContext()) ?: "1"
+
+        firestore.collection("bookings")
+            .document(req.id)
+            .update("status", "accepted")
+            .addOnSuccessListener {
+                if (!isAdded) return@addOnSuccessListener
+                createDiscussionIfNeeded(req, driverId)
+                onSuccessUI()
+            }
+            .addOnFailureListener {
+                if (!isAdded) return@addOnFailureListener
+                Toast.makeText(requireContext(), "Failed to update status", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun createDiscussionIfNeeded(req: TripRequest, driverId: String) {
+        // On vérifie s'il existe déjà une discussion pour ce booking
+        firestore.collection("discussions")
+            .whereEqualTo("bookingId", req.id)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snap ->
+                if (!snap.isEmpty) return@addOnSuccessListener
+
+                val data = hashMapOf(
+                    "tripId" to req.tripId,
+                    "bookingId" to req.id,
+                    "driverId" to driverId,
+                    "passengerId" to req.passengerId,
+                    "lastMessage" to "",
+                    "lastMessageTime" to null,
+                    "createdAt" to FieldValue.serverTimestamp()
+                )
+
+                firestore.collection("discussions")
+                    .add(data)
+            }
+    }
+
     private fun updateBookingStatus(bookingId: String, newStatus: String, onSuccessUI: () -> Unit) {
         firestore.collection("bookings")
             .document(bookingId)
@@ -313,7 +354,6 @@ class ProfileFragment : Fragment() {
 
     // ===================================================================
     //  TRIPS THAT YOU BOOKED
-    //  → bookings où passengerId == currentUserId
     // ===================================================================
 
     private fun loadBookedTrips() {
@@ -378,7 +418,6 @@ class ProfileFragment : Fragment() {
                 continue
             }
 
-            // 1) Charger le trip
             firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -399,7 +438,6 @@ class ProfileFragment : Fragment() {
                     } else 30
                     val arrivalTime = LocationUtils.addMinutesToTime(trip.departureTime, travelMinutes)
 
-                    // 2) Charger le driver
                     firestore.collection("users")
                         .document(driverId)
                         .get()
@@ -451,7 +489,7 @@ class ProfileFragment : Fragment() {
             time.text = "${trip.departureTime} - ${trip.arrivalTime}"
 
             val statusLower = trip.status.lowercase()
-            statusView.text = statusLower.replaceFirstChar { it.uppercase() } // "pending" -> "Pending"
+            statusView.text = statusLower.replaceFirstChar { it.uppercase() }
 
             when (statusLower) {
                 "pending" -> statusView.setTextColor(Color.parseColor("#FFA000"))
@@ -465,7 +503,7 @@ class ProfileFragment : Fragment() {
     }
 
     // ===================================================================
-    //  MY TRIPS (trips créés par l'utilisateur connecté)
+    //  MY TRIPS
     // ===================================================================
 
     private fun loadMyTrips() {
@@ -491,7 +529,6 @@ class ProfileFragment : Fragment() {
                 val list = snapshot.documents.mapNotNull { doc ->
                     val trip = doc.toObject(TripDocument::class.java) ?: return@mapNotNull null
 
-                    // estimation durée
                     val distance = LocationUtils.distanceBetweenAddresses(
                         ctx,
                         trip.departureAddress,
@@ -553,7 +590,6 @@ class ProfileFragment : Fragment() {
 
             buttonDelete.setOnClickListener {
                 deleteTrip(trip.id) {
-                    // Supprimer la vue de l’UI
                     container.removeView(view)
                     if (container.childCount == 0) {
                         val tv = TextView(requireContext()).apply {
