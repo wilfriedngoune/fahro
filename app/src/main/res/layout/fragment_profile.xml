@@ -284,6 +284,32 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
+        <!-- SECTION 5 : My trips -->
+        <TextView
+            android:text="My trips"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:layout_marginTop="24dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:id="@+id/myTripsBox"
+            android:orientation="vertical"
+            android:background="@drawable/bg_box_gray_rounded"
+            android:padding="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/myTripsContainer"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
         <!-- Logout button -->
         <Button
             android:id="@+id/buttonLogout"

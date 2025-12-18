@@ -27,11 +27,13 @@ class TripAdapter(
 
     override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
         val t = trips[position]
-        holder.binding.driverAvatar.setImageResource(t.driverAvatar)
+
+        holder.binding.driverAvatar.setImageResource(t.driverAvatarResId)
         holder.binding.driverName.text = t.driverName
-        holder.binding.time.text = t.departureTime
-        holder.binding.address.text = t.address
+        holder.binding.time.text = t.departureTimeRange
+        holder.binding.address.text = t.routeSummary
         holder.binding.ratingText.text = String.format("%.1f", t.rating)
+
         holder.itemView.setOnClickListener { onClick(t) }
     }
 }

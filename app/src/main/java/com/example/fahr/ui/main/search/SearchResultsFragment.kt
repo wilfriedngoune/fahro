@@ -4,16 +4,28 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fahr.R
+import com.example.fahr.core.LocationUtils
+import com.example.fahr.core.UserSession
 import com.example.fahr.databinding.FragmentSearchResultsBinding
+import com.example.fahr.ui.main.profile.model.UserProfile
 import com.example.fahr.ui.main.search.adapter.TripAdapter
 import com.example.fahr.ui.main.search.model.Trip
+import com.example.fahr.ui.main.search.model.TripDocument
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.math.abs
 
 class SearchResultsFragment : Fragment() {
 
     private lateinit var binding: FragmentSearchResultsBinding
+    private val firestore by lazy { FirebaseFirestore.getInstance() }
+
+    private var searchDeparture: String = ""
+    private var searchArrival: String = ""
+    private var searchTime: String = ""
 
     companion object {
         fun newInstance(dep: String, arr: String, time: String): SearchResultsFragment {
@@ -22,7 +34,6 @@ class SearchResultsFragment : Fragment() {
             args.putString("dep", dep)
             args.putString("arr", arr)
             args.putString("time", time)
-
             f.arguments = args
             return f
         }
@@ -35,28 +46,279 @@ class SearchResultsFragment : Fragment() {
     ): View {
         binding = FragmentSearchResultsBinding.inflate(inflater, container, false)
 
+        searchDeparture = arguments?.getString("dep").orEmpty()
+        searchArrival = arguments?.getString("arr").orEmpty()
+        searchTime = arguments?.getString("time").orEmpty()
+
         binding.backButton.setOnClickListener {
             parentFragmentManager.popBackStack()
         }
 
-        // For now, dummy list of trips (you can later calculate based on dep/arr/time)
-        val exampleTrips = listOf(
-            Trip("1", "Nelson", R.drawable.nelson, "10:30 - 12:32", "Am Roseneck 1 -> Ostfalia", 4.8f),
-            Trip("2", "Millena", R.drawable.millena, "11:15 - 15:08", "Berliner str. 12 -> TU Braunschweig", 4.5f),
-            Trip("3", "Wilfried", R.drawable.wilfried, "12:05 - 17:20", "Exer 12 -> TU Clausthal", 5.0f)
-        )
+        binding.resultsTitle.text =
+            "Available trips for your search"
 
         binding.tripResultsList.layoutManager = LinearLayoutManager(requireContext())
-        binding.tripResultsList.adapter = TripAdapter(exampleTrips) { trip ->
+
+        // Lance la recherche Firestore
+        searchTrips()
+
+        return binding.root
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        if (show) {
+            binding.tripResultsList.visibility = View.GONE
+            binding.emptyText.visibility = View.GONE
+        }
+    }
+
+    private fun showEmptyState() {
+        binding.tripResultsList.visibility = View.GONE
+        binding.emptyText.visibility = View.VISIBLE
+    }
+
+    private fun showResults(trips: List<Trip>) {
+        binding.emptyText.visibility = View.GONE
+        binding.tripResultsList.visibility = View.VISIBLE
+        binding.tripResultsList.adapter = TripAdapter(trips) { trip ->
             parentFragmentManager.beginTransaction()
                 .replace(
                     R.id.fragmentContainer,
-                    TripDetailsFragment.newInstance(trip.tripId)
+                    TripDetailsFragment.newInstance(trip.id)  // ⬅️ ici la correction
                 )
                 .addToBackStack(null)
                 .commit()
         }
+    }
 
-        return binding.root
+    private fun searchTrips() {
+        showLoading(true)
+
+        // Optionnel : validation du format de l’heure
+        if (!isValidTime(searchTime)) {
+            Toast.makeText(requireContext(), "Invalid time format (use HH:mm)", Toast.LENGTH_SHORT).show()
+        }
+
+        firestore.collection("trips")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (!isAdded) return@addOnSuccessListener
+
+                if (snapshot.isEmpty) {
+                    showLoading(false)
+                    showEmptyState()
+                    return@addOnSuccessListener
+                }
+
+                val ctx = requireContext()
+                val radiusMeters = 1000.0
+                val requestedMinutes = parseTimeToMinutes(searchTime)
+
+                // 1) Filtrer les trips par distance (départ/arrivée/stops)
+                val matchingTrips = snapshot.documents.mapNotNull { doc ->
+                    val trip = doc.toObject(TripDocument::class.java) ?: return@mapNotNull null
+                    val tripId = doc.id
+
+                    val depDist = LocationUtils.distanceBetweenAddresses(
+                        ctx,
+                        searchDeparture,
+                        trip.departureAddress
+                    )
+                    val arrDist = LocationUtils.distanceBetweenAddresses(
+                        ctx,
+                        searchArrival,
+                        trip.arrivalAddress
+                    )
+
+                    var matches = false
+
+                    // Cas départ / arrivée direct
+                    if (depDist != null && arrDist != null &&
+                        depDist <= radiusMeters && arrDist <= radiusMeters
+                    ) {
+                        matches = true
+                    }
+
+                    // Cas via stops
+                    if (!matches && trip.stops.isNotEmpty()) {
+                        for (stop in trip.stops) {
+                            val depStopDist = LocationUtils.distanceBetweenAddresses(
+                                ctx,
+                                searchDeparture,
+                                stop
+                            )
+                            val arrStopDist = LocationUtils.distanceBetweenAddresses(
+                                ctx,
+                                searchArrival,
+                                stop
+                            )
+                            if ((depStopDist != null && depStopDist <= radiusMeters) ||
+                                (arrStopDist != null && arrStopDist <= radiusMeters)
+                            ) {
+                                matches = true
+                                break
+                            }
+                        }
+                    }
+
+                    if (!matches) return@mapNotNull null
+
+                    // On garde pour la suite : (id, tripDoc)
+                    Pair(tripId, trip)
+                }
+
+                if (matchingTrips.isEmpty()) {
+                    showLoading(false)
+                    showEmptyState()
+                    return@addOnSuccessListener
+                }
+
+                // 2) Récupérer les infos du driver (user) pour chaque trip
+                loadDriversAndBuildTrips(matchingTrips, requestedMinutes)
+            }
+            .addOnFailureListener {
+                if (!isAdded) return@addOnFailureListener
+                showLoading(false)
+                Toast.makeText(requireContext(), "Error loading trips", Toast.LENGTH_SHORT).show()
+                showEmptyState()
+            }
+    }
+
+    /**
+     * Pour chaque trip filtré, on va chercher le driver dans "users".
+     * On calcule aussi l’heure d’arrivée estimée pour l’affichage.
+     */
+    private fun loadDriversAndBuildTrips(
+        matchingTrips: List<Pair<String, TripDocument>>,
+        requestedMinutes: Int?
+    ) {
+        if (matchingTrips.isEmpty() || !isAdded) {
+            showLoading(false)
+            showEmptyState()
+            return
+        }
+
+        val ctx = requireContext()
+        val result = mutableListOf<Triple<Trip, Int, Int>>() // Trip, depMinutes, diffWithRequested
+        val cacheUsers = mutableMapOf<String, UserProfile>()
+        var remaining = matchingTrips.size
+
+        fun doneOne() {
+            remaining--
+            if (remaining <= 0 && isAdded) {
+                showLoading(false)
+                if (result.isEmpty()) {
+                    showEmptyState()
+                } else {
+                    // Trier par proximité de l’heure demandée
+                    val sorted = result.sortedBy { it.third }
+                    showResults(sorted.map { it.first })
+                }
+            }
+        }
+
+        for ((tripId, tripDoc) in matchingTrips) {
+            val driverId = tripDoc.driverId
+            if (driverId.isEmpty()) {
+                doneOne()
+                continue
+            }
+
+            val depMinutes = parseTimeToMinutes(tripDoc.departureTime) ?: 0
+
+            // Estimation durée de trajet pour afficher "HH:mm - HH:mm"
+            val distance = LocationUtils.distanceBetweenAddresses(
+                ctx,
+                tripDoc.departureAddress,
+                tripDoc.arrivalAddress
+            )
+            val travelMinutes = if (distance != null) {
+                LocationUtils.estimateTravelMinutes(distance)
+            } else 30
+            val arrivalTime = LocationUtils.addMinutesToTime(tripDoc.departureTime, travelMinutes)
+
+            val diff = if (requestedMinutes != null) {
+                abs(depMinutes - requestedMinutes)
+            } else {
+                depMinutes
+            }
+
+            // Si on a déjà le user en cache
+            val cachedUser = cacheUsers[driverId]
+            if (cachedUser != null) {
+                val trip = buildTripViewModel(tripId, tripDoc, cachedUser, arrivalTime)
+                result.add(Triple(trip, depMinutes, diff))
+                doneOne()
+                continue
+            }
+
+            // Sinon on va le chercher dans Firestore
+            firestore.collection("users")
+                .document(driverId)
+                .get()
+                .addOnSuccessListener { userSnap ->
+                    if (!isAdded) {
+                        doneOne()
+                        return@addOnSuccessListener
+                    }
+                    val user = userSnap.toObject(UserProfile::class.java)
+                    if (user != null) {
+                        cacheUsers[driverId] = user
+                        val trip = buildTripViewModel(tripId, tripDoc, user, arrivalTime)
+                        result.add(Triple(trip, depMinutes, diff))
+                    }
+                    doneOne()
+                }
+                .addOnFailureListener {
+                    if (!isAdded) return@addOnFailureListener
+                    doneOne()
+                }
+        }
+    }
+
+    private fun buildTripViewModel(
+        tripId: String,
+        tripDoc: TripDocument,
+        driver: UserProfile,
+        arrivalTime: String
+    ): Trip {
+        val avatarResId = avatarFromResName(driver.avatarResName)
+        val rating = if (driver.rating > 0) driver.rating.toFloat() else 0f
+        val timeDisplay = "${tripDoc.departureTime} - $arrivalTime"
+        val addressDisplay = "${tripDoc.departureAddress} -> ${tripDoc.arrivalAddress}"
+
+        return Trip(
+            id = tripId,
+            driverId = driver.id,
+            driverName = if (driver.name.isNotBlank()) driver.name else "Driver ${driver.id}",
+            driverAvatarResId = avatarResId,
+            departureTimeRange = timeDisplay,
+            routeSummary = addressDisplay,
+            rating = rating
+        )
+    }
+
+
+    // -------- Utils --------
+
+    private fun avatarFromResName(name: String?): Int {
+        if (name.isNullOrEmpty()) return R.drawable.ic_profile
+        val resId = resources.getIdentifier(name, "drawable", requireContext().packageName)
+        return if (resId != 0) resId else R.drawable.ic_profile
+    }
+
+    private fun isValidTime(time: String): Boolean {
+        // Format simple HH:mm
+        val regex = Regex("^([01]\\d|2[0-3]):[0-5]\\d\$")
+        return regex.matches(time)
+    }
+
+    private fun parseTimeToMinutes(time: String): Int? {
+        val parts = time.split(":")
+        if (parts.size != 2) return null
+        val h = parts[0].toIntOrNull() ?: return null
+        val m = parts[1].toIntOrNull() ?: return null
+        return h * 60 + m
     }
 }

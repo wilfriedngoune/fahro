@@ -21,14 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp" />
 
-        <!-- Departure date -->
-        <EditText
-            android:id="@+id/inputDate"
-            android:hint="Departure date (e.g. 2025-12-24)"
-            android:background="@drawable/bg_search_bar"
-            android:padding="16dp"
-            android:layout_width="match_parent"
-            android:layout_height="50dp" />
+
 
         <!-- Departure time -->
         <EditText

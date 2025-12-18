@@ -43,7 +43,6 @@ class AddTripSuccessFragment : Fragment() {
             }
 
             val summary = """
-                Date: ${it.departureDate}
                 Time: ${it.departureTime}
                 From: ${it.departureAddress}
                 To: ${it.arrivalAddress}

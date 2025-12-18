@@ -1,12 +1,10 @@
 package com.example.fahr.ui.main.profile.model
 
-data class BookedTripProfile(
+data class MyTripProfile(
     val id: String,
     val departure: String,
     val arrival: String,
     val departureTime: String,
     val arrivalTime: String,
-    val status: String,          // "pending", "accepted", "denied"
-    val driverName: String,
-    val driverAvatarResId: Int
+    val createdAtText: String
 )

@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.fahr.R
+import com.example.fahr.core.UserSession
 import com.example.fahr.databinding.FragmentAddBinding
 import com.example.fahr.ui.main.add.model.TripPayload
 import com.google.firebase.firestore.FieldValue
@@ -20,10 +21,35 @@ class AddFragment : Fragment() {
     private lateinit var binding: FragmentAddBinding
     private val stops = mutableListOf<String>()
 
-    // Firestore instance (using KTX)
-    private val firestore by lazy {
-        Firebase.firestore
-    }
+    // 🔹 Firestore instance (using KTX)
+    private val firestore by lazy { Firebase.firestore }
+
+    // ---------- REGEX / VALIDATION ----------
+
+    // Adresse : lettres (accentuées ok), chiffres, espace, ., , ' / -
+    // longueur 5 à 120 caractères
+    private val ADDRESS_REGEX = Regex(
+        pattern = """^[\p{L}\p{N}\s,.'’/\-#()°]+$"""
+    )
+
+    // Heure : HH:mm (24h)
+    private val TIME_REGEX =
+        Regex("""^([01]\d|2[0-3]):[0-5]\d$""")
+
+    // Date : jj/MM/aaaa
+    private val DATE_REGEX =
+        Regex("""^([0-2]\d|3[01])/(0\d|1[0-2])/\d{4}$""")
+
+    private fun isValidAddress(addr: String): Boolean =
+        ADDRESS_REGEX.matches(addr)
+
+    private fun isValidTime(time: String): Boolean =
+        TIME_REGEX.matches(time)
+
+    private fun isValidDate(date: String): Boolean =
+        DATE_REGEX.matches(date)
+
+    // ---------- ANDROID LIFECYCLE ----------
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,29 +58,39 @@ class AddFragment : Fragment() {
     ): View {
         binding = FragmentAddBinding.inflate(inflater, container, false)
 
-        // Show stop form when user clicks "Add a stop"
+        // "Add a stop" -> affiche le petit formulaire
         binding.textAddStop.setOnClickListener {
             binding.addStopForm.visibility = View.VISIBLE
         }
 
-        // Confirm a stop
+        // Bouton "Confirm stop"
         binding.buttonConfirmStop.setOnClickListener {
             val stopAddress = binding.inputStopAddress.text.toString().trim()
+
             if (stopAddress.isEmpty()) {
                 Toast.makeText(requireContext(), "Please enter a stop address", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Add to list
+            if (!isValidAddress(stopAddress)) {
+                Toast.makeText(
+                    requireContext(),
+                    "Please enter a valid stop address (street + number + city)",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
+
+            // Ajoute dans la liste + dans l'UI
             stops.add(stopAddress)
             addStopRow(stopAddress)
 
-            // Clear input & hide form
+            // Reset input + cache le formulaire
             binding.inputStopAddress.text?.clear()
             binding.addStopForm.visibility = View.GONE
         }
 
-        // Add trip button
+        // Bouton principal "Add trip"
         binding.buttonAddTrip.setOnClickListener {
             createTrip()
         }
@@ -62,8 +98,10 @@ class AddFragment : Fragment() {
         return binding.root
     }
 
+    // ---------- UI pour les stops ----------
+
     /**
-     * Add one row in the UI for a stop, with delete button.
+     * Ajoute une ligne visuelle pour un stop avec bouton delete.
      */
     private fun addStopRow(stopAddress: String) {
         val inflater = LayoutInflater.from(requireContext())
@@ -75,10 +113,8 @@ class AddFragment : Fragment() {
         textStop.text = "• $stopAddress"
 
         buttonDelete.setOnClickListener {
-            // Find index of this view in the container
             val index = binding.stopsContainer.indexOfChild(stopView)
             if (index != -1) {
-                // Remove from list and from UI
                 if (index < stops.size) {
                     stops.removeAt(index)
                 }
@@ -92,37 +128,77 @@ class AddFragment : Fragment() {
     }
 
     /**
-     * Show or hide "Stops added" title depending on if stops exist.
+     * Affiche ou cache "Stops added" selon s'il y a des stops ou pas.
      */
     private fun updateStopsTitleVisibility() {
         binding.stopsTitle.visibility =
             if (stops.isEmpty()) View.GONE else View.VISIBLE
     }
 
+    // ---------- CRÉATION DU TRIP ----------
+
     /**
-     * Validate form, build payload and send to Firestore.
+     * Valide le formulaire, construit le payload et envoie à Firestore.
      */
     private fun createTrip() {
-        val date = binding.inputDate.text.toString().trim()
         val time = binding.inputTime.text.toString().trim()
         val dep = binding.inputDeparture.text.toString().trim()
         val arr = binding.inputArrival.text.toString().trim()
         val priceText = binding.inputPrice.text.toString().trim()
+        val currentUserId = UserSession.getCurrentUserId(requireContext())
 
-        if (date.isEmpty() || time.isEmpty() || dep.isEmpty() || arr.isEmpty() || priceText.isEmpty()) {
-            Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+
+
+        // 🔎 Validation heure
+        if (!isValidTime(time)) {
+            Toast.makeText(
+                requireContext(),
+                "Please enter a valid time in format HH:mm (e.g. 08:30)",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
 
+        // 🔎 Validation adresses
+        if (!isValidAddress(dep)) {
+            Toast.makeText(
+                requireContext(),
+                "Please enter a valid departure address (street + number + city)",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        if (!isValidAddress(arr)) {
+            Toast.makeText(
+                requireContext(),
+                "Please enter a valid arrival address (street + number + city)",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        // 🔎 Validation stops (au cas où tu veux empêcher des vieux stops invalides)
+        for (s in stops) {
+            if (!isValidAddress(s)) {
+                Toast.makeText(
+                    requireContext(),
+                    "One of your stops has an invalid address. Please remove or edit it.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+        }
+
+        // 🔎 Validation price
         val price = priceText.toDoubleOrNull()
         if (price == null || price <= 0.0) {
             Toast.makeText(requireContext(), "Please enter a valid price", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Build payload (for UI / success screen)
+        // Construire le payload pour l'écran de succès
         val payload = TripPayload(
-            departureDate = date,
             departureTime = time,
             departureAddress = dep,
             arrivalAddress = arr,
@@ -130,26 +206,23 @@ class AddFragment : Fragment() {
             price = price
         )
 
-        // Disable button to avoid multiple taps
+        // Désactive le bouton pour éviter plusieurs clics
         binding.buttonAddTrip.isEnabled = false
 
-        // Build Firestore document
+        // Document Firestore
         val tripMap = hashMapOf(
-            "departureDate" to date,
             "departureTime" to time,
             "departureAddress" to dep,
             "arrivalAddress" to arr,
             "stops" to stops.toList(),
             "price" to price,
-            // plus tard tu mettras l'ID du user Firebase ici
-            "driverId" to "demo_driver_1",
+            "driverId" to currentUserId,
             "createdAt" to FieldValue.serverTimestamp()
         )
 
-        // Save to Firestore in "trips" collection
         firestore.collection("trips")
             .add(tripMap)
-            .addOnSuccessListener { docRef ->
+            .addOnSuccessListener { _ ->
                 Toast.makeText(requireContext(), "Trip saved!", Toast.LENGTH_SHORT).show()
 
                 val successFragment = AddTripSuccessFragment.newInstance(payload)
