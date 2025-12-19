@@ -57,6 +57,7 @@ dependencies {
 
     // 🔹 Firestore KTX (sans version, gérée par le BoM)
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation(libs.firebase.database)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
