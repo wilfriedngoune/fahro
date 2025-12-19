@@ -47,18 +47,11 @@ class ProfileFragment : Fragment() {
                 .commit()
         }
 
-        // Policy
         binding.textPolicy.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, PolicyFragment())
                 .addToBackStack(null)
                 .commit()
-        }
-
-        // Theme switch placeholder
-        binding.switchTheme.setOnCheckedChangeListener { _, isChecked ->
-            val msg = if (isChecked) "Dark mode ON (dummy)" else "Dark mode OFF (dummy)"
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
         }
 
         // Logout
@@ -67,16 +60,14 @@ class ProfileFragment : Fragment() {
             Toast.makeText(requireContext(), "Logout clicked (dummy)", Toast.LENGTH_SHORT).show()
         }
 
-        // Chargement des données
         loadUserProfile()
-        loadTripRequests()   // bookings où driverId == currentUserId & status == "pending"
-        loadBookedTrips()    // bookings où passengerId == currentUserId
-        loadMyTrips()        // trips créés par l'utilisateur
+        loadTripRequests()
+        loadBookedTrips()
+        loadMyTrips()
 
         return binding.root
     }
 
-    // ---------- USER PROFILE ----------
 
     private fun loadUserProfile() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
@@ -126,10 +117,7 @@ class ProfileFragment : Fragment() {
             if (p.verified) "Verified profile ✓" else "Profile not verified"
     }
 
-    // ===================================================================
-    //  TRIP REQUESTS (Trip booked – waiting for YOUR validation)
-    //  → bookings où driverId == currentUserId et status == "pending"
-    // ===================================================================
+
 
     private fun loadTripRequests() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
@@ -193,7 +181,6 @@ class ProfileFragment : Fragment() {
                 continue
             }
 
-            // 1) Trip
             firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -214,7 +201,6 @@ class ProfileFragment : Fragment() {
                     } else 30
                     val arrivalTime = LocationUtils.addMinutesToTime(trip.departureTime, travelMinutes)
 
-                    // 2) Passager
                     firestore.collection("users")
                         .document(passengerId)
                         .get()
@@ -292,30 +278,55 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    /**
-     * Quand on accepte une demande :
-     *  - on met le booking en "accepted"
-     *  - on crée une discussion vide (si elle n'existe pas déjà)
-     */
     private fun acceptBooking(req: TripRequest, onSuccessUI: () -> Unit) {
         val driverId = UserSession.getCurrentUserId(requireContext()) ?: "1"
 
-        firestore.collection("bookings")
-            .document(req.id)
-            .update("status", "accepted")
-            .addOnSuccessListener {
-                if (!isAdded) return@addOnSuccessListener
+        val bookingRef = firestore.collection("bookings").document(req.id)
+        val tripRef = firestore.collection("trips").document(req.tripId)
+        val driverRef = firestore.collection("users").document(driverId)
+        val passengerRef = firestore.collection("users").document(req.passengerId)
+
+        firestore.runTransaction { tx ->
+            val bookingSnap = tx.get(bookingRef)
+            val currentStatus = bookingSnap.getString("status") ?: "pending"
+
+            if (currentStatus != "pending") {
+                return@runTransaction false
+            }
+
+            val tripSnap = tx.get(tripRef)
+            val price = tripSnap.getDouble("price") ?: 0.0
+
+            val driverSnap = tx.get(driverRef)
+            val passengerSnap = tx.get(passengerRef)
+
+            val currentDriverBalance = driverSnap.getDouble("balance") ?: 0.0
+            val currentPassengerBalance = passengerSnap.getDouble("balance") ?: 0.0
+
+            val newDriverBalance = currentDriverBalance + price
+            val newPassengerBalance = currentPassengerBalance - price
+
+            tx.update(bookingRef, "status", "accepted")
+            tx.update(driverRef, "balance", newDriverBalance)
+            tx.update(passengerRef, "balance", newPassengerBalance)
+
+            true
+        }.addOnSuccessListener { changed ->
+            if (!isAdded) return@addOnSuccessListener
+
+            if (changed == true) {
                 createDiscussionIfNeeded(req, driverId)
-                onSuccessUI()
+                loadUserProfile()
+                Toast.makeText(requireContext(), "Booking accepted", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener {
-                if (!isAdded) return@addOnFailureListener
-                Toast.makeText(requireContext(), "Failed to update status", Toast.LENGTH_SHORT).show()
-            }
+            onSuccessUI()
+        }.addOnFailureListener {
+            if (!isAdded) return@addOnFailureListener
+            Toast.makeText(requireContext(), "Failed to accept booking", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun createDiscussionIfNeeded(req: TripRequest, driverId: String) {
-        // On vérifie s'il existe déjà une discussion pour ce booking
         firestore.collection("discussions")
             .whereEqualTo("bookingId", req.id)
             .limit(1)
@@ -352,9 +363,7 @@ class ProfileFragment : Fragment() {
             }
     }
 
-    // ===================================================================
-    //  TRIPS THAT YOU BOOKED
-    // ===================================================================
+
 
     private fun loadBookedTrips() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
@@ -502,9 +511,6 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    // ===================================================================
-    //  MY TRIPS
-    // ===================================================================
 
     private fun loadMyTrips() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
@@ -620,7 +626,6 @@ class ProfileFragment : Fragment() {
             }
     }
 
-    // ---------- Utils ----------
 
     private fun avatarFromResName(name: String?): Int {
         if (name.isNullOrEmpty()) return R.drawable.ic_profile

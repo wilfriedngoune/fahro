@@ -191,25 +191,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- Theme row -->
-            <LinearLayout
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
 
-                <TextView
-                    android:text="Theme"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-                <Switch
-                    android:id="@+id/switchTheme"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dark mode" />
-            </LinearLayout>
 
             <!-- Policy link -->
             <TextView
@@ -230,7 +212,6 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
-        <!-- SECTION 3 : Trip booked (Waiting for your validation) -->
         <TextView
             android:text="Trip booked (Waiting for your validation)"
             android:textStyle="bold"
@@ -249,7 +230,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- Container for list of trip requests -->
             <LinearLayout
                 android:id="@+id/tripRequestsContainer"
                 android:orientation="vertical"
@@ -257,7 +237,6 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
-        <!-- SECTION 4 : Trip that you booked -->
         <TextView
             android:text="Trip that you booked"
             android:textStyle="bold"

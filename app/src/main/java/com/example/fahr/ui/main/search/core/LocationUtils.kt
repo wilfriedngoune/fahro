@@ -10,10 +10,6 @@ object LocationUtils {
 
     private const val EARTH_RADIUS_KM = 6371.0
 
-    /**
-     * Convertit une adresse texte en (lat, lng).
-     * Retourne null si échec.
-     */
     fun geocodeAddress(context: Context, address: String): Pair<Double, Double>? {
         return try {
             val geocoder = Geocoder(context)
@@ -30,9 +26,7 @@ object LocationUtils {
         }
     }
 
-    /**
-     * Distance en km entre deux coordonnées (Haversine).
-     */
+
     fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
@@ -45,9 +39,7 @@ object LocationUtils {
         return EARTH_RADIUS_KM * c
     }
 
-    /**
-     * Distance entre deux adresses (en km) ou null si on ne peut pas géocoder.
-     */
+
     fun distanceBetweenAddresses(
         context: Context,
         fromAddress: String,
@@ -58,10 +50,7 @@ object LocationUtils {
         return distanceKm(from.first, from.second, to.first, to.second)
     }
 
-    /**
-     * Estimation de la durée en minutes pour une distance donnée.
-     * (Approximation : 40 km/h en moyenne)
-     */
+
     fun estimateTravelMinutes(distanceKm: Double): Int {
         val speedKmH = 40.0           // vitesse moyenne en ville
         val minutes = distanceKm / speedKmH * 60.0
@@ -69,9 +58,7 @@ object LocationUtils {
         return minutes.coerceAtLeast(minMinutes).roundToInt()
     }
 
-    /**
-     * Ajoute X minutes à une heure HH:mm -> renvoie HH:mm.
-     */
+
     fun addMinutesToTime(baseTime: String, minutesToAdd: Int): String {
         val parts = baseTime.split(":")
         if (parts.size != 2) return baseTime
@@ -85,9 +72,7 @@ object LocationUtils {
         return String.format("%02d:%02d", newH, newM)
     }
 
-    /**
-     * Convertit HH:mm en minutes depuis 00:00.
-     */
+
     fun timeToMinutes(time: String): Int? {
         val parts = time.split(":")
         if (parts.size != 2) return null

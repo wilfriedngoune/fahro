@@ -56,7 +56,6 @@ class AddTripSuccessFragment : Fragment() {
         }
 
         binding.buttonBackHome.setOnClickListener {
-            // Retour à la page Search
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, SearchFragment())
                 .commit()

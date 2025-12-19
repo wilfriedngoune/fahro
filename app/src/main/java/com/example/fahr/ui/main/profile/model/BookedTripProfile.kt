@@ -6,7 +6,7 @@ data class BookedTripProfile(
     val arrival: String,
     val departureTime: String,
     val arrivalTime: String,
-    val status: String,          // "pending", "accepted", "denied"
+    val status: String,
     val driverName: String,
     val driverAvatarResId: Int
 )

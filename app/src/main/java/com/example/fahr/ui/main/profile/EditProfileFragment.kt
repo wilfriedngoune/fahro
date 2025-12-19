@@ -29,7 +29,6 @@ class EditProfileFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // Charger les données existantes du profil
         loadProfile()
 
         // Bouton "Save"
@@ -40,9 +39,7 @@ class EditProfileFragment : Fragment() {
         return binding.root
     }
 
-    /**
-     * Lit le profil dans Firestore et pré-remplit le formulaire.
-     */
+
     private fun loadProfile() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
 
@@ -70,10 +67,7 @@ class EditProfileFragment : Fragment() {
             }
     }
 
-    /**
-     * Sauvegarde UNIQUEMENT les champs éditables, sans toucher
-     * à rating, balance, avatarResName, verified.
-     */
+
     private fun saveProfile() {
         val userId = UserSession.getCurrentUserId(requireContext()) ?: "1"
 

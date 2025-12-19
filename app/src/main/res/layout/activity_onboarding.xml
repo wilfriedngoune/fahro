@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Rounded card that contains the ViewPager -->
     <LinearLayout
         android:id="@+id/cardContainer"
         android:background="@drawable/bg_card_rounded"
@@ -22,7 +21,6 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Indicators (3 dots) -->
         <LinearLayout
             android:id="@+id/indicatorsContainer"
             android:layout_width="wrap_content"
@@ -33,7 +31,6 @@
             android:layout_marginBottom="8dp"/>
     </LinearLayout>
 
-    <!-- Rounded primary button -->
     <Button
         android:id="@+id/buttonNext"
         android:layout_width="match_parent"

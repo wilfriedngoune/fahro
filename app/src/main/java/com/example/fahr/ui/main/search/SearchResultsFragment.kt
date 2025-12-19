@@ -54,12 +54,10 @@ class SearchResultsFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        binding.resultsTitle.text =
-            "Available trips for your search"
+        binding.resultsTitle.text = "Available trips for your search"
 
         binding.tripResultsList.layoutManager = LinearLayoutManager(requireContext())
 
-        // Lance la recherche Firestore
         searchTrips()
 
         return binding.root
@@ -85,7 +83,7 @@ class SearchResultsFragment : Fragment() {
             parentFragmentManager.beginTransaction()
                 .replace(
                     R.id.fragmentContainer,
-                    TripDetailsFragment.newInstance(trip.id)  // ⬅️ ici la correction
+                    TripDetailsFragment.newInstance(trip.id)
                 )
                 .addToBackStack(null)
                 .commit()
@@ -95,7 +93,7 @@ class SearchResultsFragment : Fragment() {
     private fun searchTrips() {
         showLoading(true)
 
-        // Optionnel : validation du format de l’heure
+        // Validation simple de l’heure
         if (!isValidTime(searchTime)) {
             Toast.makeText(requireContext(), "Invalid time format (use HH:mm)", Toast.LENGTH_SHORT).show()
         }
@@ -114,11 +112,15 @@ class SearchResultsFragment : Fragment() {
                 val ctx = requireContext()
                 val radiusMeters = 1000.0
                 val requestedMinutes = parseTimeToMinutes(searchTime)
+                val currentUserId = UserSession.getCurrentUserId(ctx)
 
-                // 1) Filtrer les trips par distance (départ/arrivée/stops)
                 val matchingTrips = snapshot.documents.mapNotNull { doc ->
                     val trip = doc.toObject(TripDocument::class.java) ?: return@mapNotNull null
                     val tripId = doc.id
+
+                    if (currentUserId != null && trip.driverId == currentUserId) {
+                        return@mapNotNull null
+                    }
 
                     val depDist = LocationUtils.distanceBetweenAddresses(
                         ctx,
@@ -133,14 +135,12 @@ class SearchResultsFragment : Fragment() {
 
                     var matches = false
 
-                    // Cas départ / arrivée direct
                     if (depDist != null && arrDist != null &&
                         depDist <= radiusMeters && arrDist <= radiusMeters
                     ) {
                         matches = true
                     }
 
-                    // Cas via stops
                     if (!matches && trip.stops.isNotEmpty()) {
                         for (stop in trip.stops) {
                             val depStopDist = LocationUtils.distanceBetweenAddresses(
@@ -164,7 +164,6 @@ class SearchResultsFragment : Fragment() {
 
                     if (!matches) return@mapNotNull null
 
-                    // On garde pour la suite : (id, tripDoc)
                     Pair(tripId, trip)
                 }
 
@@ -174,7 +173,6 @@ class SearchResultsFragment : Fragment() {
                     return@addOnSuccessListener
                 }
 
-                // 2) Récupérer les infos du driver (user) pour chaque trip
                 loadDriversAndBuildTrips(matchingTrips, requestedMinutes)
             }
             .addOnFailureListener {
@@ -185,10 +183,7 @@ class SearchResultsFragment : Fragment() {
             }
     }
 
-    /**
-     * Pour chaque trip filtré, on va chercher le driver dans "users".
-     * On calcule aussi l’heure d’arrivée estimée pour l’affichage.
-     */
+
     private fun loadDriversAndBuildTrips(
         matchingTrips: List<Pair<String, TripDocument>>,
         requestedMinutes: Int?
@@ -225,9 +220,24 @@ class SearchResultsFragment : Fragment() {
                 continue
             }
 
-            val depMinutes = parseTimeToMinutes(tripDoc.departureTime) ?: 0
+            val depMinutes = parseTimeToMinutes(tripDoc.departureTime)
+            if (depMinutes == null) {
+                doneOne()
+                continue
+            }
 
-            // Estimation durée de trajet pour afficher "HH:mm - HH:mm"
+
+            val diff = if (requestedMinutes != null) {
+                val d = abs(depMinutes - requestedMinutes)
+                if (d > 30) {
+                    doneOne()
+                    continue
+                }
+                d
+            } else {
+                depMinutes
+            }
+
             val distance = LocationUtils.distanceBetweenAddresses(
                 ctx,
                 tripDoc.departureAddress,
@@ -238,13 +248,6 @@ class SearchResultsFragment : Fragment() {
             } else 30
             val arrivalTime = LocationUtils.addMinutesToTime(tripDoc.departureTime, travelMinutes)
 
-            val diff = if (requestedMinutes != null) {
-                abs(depMinutes - requestedMinutes)
-            } else {
-                depMinutes
-            }
-
-            // Si on a déjà le user en cache
             val cachedUser = cacheUsers[driverId]
             if (cachedUser != null) {
                 val trip = buildTripViewModel(tripId, tripDoc, cachedUser, arrivalTime)
@@ -253,7 +256,6 @@ class SearchResultsFragment : Fragment() {
                 continue
             }
 
-            // Sinon on va le chercher dans Firestore
             firestore.collection("users")
                 .document(driverId)
                 .get()
@@ -300,8 +302,6 @@ class SearchResultsFragment : Fragment() {
     }
 
 
-    // -------- Utils --------
-
     private fun avatarFromResName(name: String?): Int {
         if (name.isNullOrEmpty()) return R.drawable.ic_profile
         val resId = resources.getIdentifier(name, "drawable", requireContext().packageName)
@@ -309,7 +309,6 @@ class SearchResultsFragment : Fragment() {
     }
 
     private fun isValidTime(time: String): Boolean {
-        // Format simple HH:mm
         val regex = Regex("^([01]\\d|2[0-3]):[0-5]\\d\$")
         return regex.matches(time)
     }

@@ -77,7 +77,7 @@ class ConversationFragment : Fragment() {
         }
 
         subscribeMessages()
-        debugAllMessagesOnce()   // 🔍 Debug pour voir TOUTE la collection messages
+        debugAllMessagesOnce()
 
         return binding.root
     }
@@ -88,9 +88,7 @@ class ConversationFragment : Fragment() {
         android.util.Log.d(TAG, "Listener removed")
     }
 
-    // ============================================================
-    // 1) Abonnement temps réel aux messages de la discussion
-    // ============================================================
+
     private fun subscribeMessages() {
         val discussionId = chatId ?: run {
             android.util.Log.e(TAG, "subscribeMessages: chatId is null")
@@ -159,9 +157,7 @@ class ConversationFragment : Fragment() {
             }
     }
 
-    // ============================================================
-    // 2) Debug : lire TOUTE la collection messages une fois
-    // ============================================================
+
     private fun debugAllMessagesOnce() {
         firestore.collection("messages")
             .get()
@@ -186,9 +182,6 @@ class ConversationFragment : Fragment() {
             }
     }
 
-    // ============================================================
-    // 3) Envoi d’un message
-    // ============================================================
     private fun sendMessage() {
         val discussionId = chatId ?: run {
             android.util.Log.e(TAG, "sendMessage: chatId is null")

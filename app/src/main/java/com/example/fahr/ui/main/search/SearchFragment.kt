@@ -22,32 +22,25 @@ class SearchFragment : Fragment() {
     ): View {
         binding = FragmentSearchBinding.inflate(inflater, container, false)
 
-        // Button Search: go to results with current form values
         binding.buttonSearch.setOnClickListener {
             val dep = binding.inputDeparture.text.toString().trim()
             val arr = binding.inputArrival.text.toString().trim()
             val time = binding.inputTime.text.toString().trim()
 
             if (dep.isEmpty() || arr.isEmpty() || time.isEmpty()) {
-                // tu peux mettre un Toast si tu veux
-                openSearchResults(dep, arr, time) // ou return si tu veux forcer les champs
+                openSearchResults(dep, arr, time)
             } else {
-                // Sauvegarder cette recherche comme "recent search"
                 saveRecentSearch(dep, arr, time)
-                // Ouvrir les résultats
                 openSearchResults(dep, arr, time)
             }
         }
 
-        // Charger et afficher les 3 dernières recherches
         populateRecentSearches()
 
         return binding.root
     }
 
-    /**
-     * Open results screen with given parameters.
-     */
+
     private fun openSearchResults(dep: String, arr: String, time: String) {
         parentFragmentManager.beginTransaction()
             .replace(
@@ -58,7 +51,6 @@ class SearchFragment : Fragment() {
             .commit()
     }
 
-    // ========= Recent searches (SharedPreferences) =========
 
     private fun saveRecentSearch(dep: String, arr: String, time: String) {
         val prefs = requireContext().getSharedPreferences("search_prefs", Context.MODE_PRIVATE)
@@ -71,10 +63,8 @@ class SearchFragment : Fragment() {
             .filter { it.isNotBlank() && it != encodedNew }
             .toMutableList()
 
-        // Ajouter la nouvelle recherche au début
         list.add(0, encodedNew)
 
-        // Garder seulement les 3 dernières
         if (list.size > 3) {
             list.subList(3, list.size).clear()
         }
@@ -94,7 +84,6 @@ class SearchFragment : Fragment() {
     }
 
     private fun encodeRecent(dep: String, arr: String, time: String): String {
-        // On évite les "||" dans les strings (assez safe pour notre cas)
         return "$dep||$arr||$time"
     }
 
@@ -108,9 +97,7 @@ class SearchFragment : Fragment() {
         )
     }
 
-    /**
-     * Dynamically add recent search items under "Recent searches".
-     */
+
     private fun populateRecentSearches() {
         val recentList = loadRecentSearches()
 
@@ -118,7 +105,6 @@ class SearchFragment : Fragment() {
         container.removeAllViews()
 
         if (recentList.isEmpty()) {
-            // Rien à afficher (tu peux rajouter un petit texte "No recent searches" si tu veux)
             return
         }
 

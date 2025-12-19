@@ -63,12 +63,10 @@ class ChatFragment : Fragment() {
     private fun loadDiscussions() {
         val currentUserId = UserSession.getCurrentUserId(requireContext()) ?: return
 
-        // Discussions où je suis driver
         firestore.collection("discussions")
             .whereEqualTo("driverId", currentUserId)
             .get()
             .addOnSuccessListener { snapDriver ->
-                // Discussions où je suis passenger
                 firestore.collection("discussions")
                     .whereEqualTo("passengerId", currentUserId)
                     .get()

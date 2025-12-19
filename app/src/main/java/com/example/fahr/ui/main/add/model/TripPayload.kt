@@ -7,5 +7,5 @@ data class TripPayload(
     val departureAddress: String,
     val arrivalAddress: String,
     val stops: List<String>,
-    val price: Double           // ✅ nouveau champ
+    val price: Double
 ) : Serializable

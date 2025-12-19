@@ -19,11 +19,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // dans onCreate de MainActivity, après setContentView
         UserSession.setCurrentUserId(this, "1")
 
 
-        // Default fragment
         openFragment(SearchFragment())
 
         binding.bottomNav.setOnItemSelectedListener { item ->

@@ -54,7 +54,6 @@ class TripDetailsFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // Itinéraire replié par défaut
         binding.itineraryContent.visibility = View.GONE
         binding.itineraryToggle.rotation = 0f
         binding.itineraryHeader.setOnClickListener {
@@ -73,9 +72,6 @@ class TripDetailsFragment : Fragment() {
         return binding.root
     }
 
-    // ---------------------------------------------------------
-    // 1. Charger le trip, puis le profil du driver
-    // ---------------------------------------------------------
 
     private fun loadTripDetails() {
         val id = tripId ?: return
@@ -124,13 +120,8 @@ class TripDetailsFragment : Fragment() {
                 }
             }
             .addOnFailureListener {
-                // en cas d’erreur on garde les placeholders
             }
     }
-
-    // ---------------------------------------------------------
-    // 2. Binding du driver (nom, avatar, rating, voiture)
-    // ---------------------------------------------------------
 
     private fun bindDriver(p: UserProfile) {
         val avatarResId = avatarFromResName(p.avatarResName)
@@ -150,14 +141,11 @@ class TripDetailsFragment : Fragment() {
         return if (resId != 0) resId else R.drawable.ic_profile
     }
 
-    // ---------------------------------------------------------
-    // 3. Binding du trajet + NOUVEL ALGO D'ITINÉRAIRE
-    // ---------------------------------------------------------
+
 
     private fun bindTrip(trip: TripDocument) {
         if (!isAdded) return
 
-        // placeholders (écrasés ensuite par bindDriver)
         binding.driverName.text = "Driver ${trip.driverId.ifBlank { "unknown" }}"
         binding.ratingText.text = String.format("%.1f", 4.8)
         binding.carType.text = "Car: VW Golf • Blue"
@@ -170,7 +158,6 @@ class TripDetailsFragment : Fragment() {
         val ctx = requireContext()
         val depTime = trip.departureTime
 
-        // Liste des adresses : départ + stops + arrivée
         val allAddresses = mutableListOf<String>()
         allAddresses.add(trip.departureAddress)
         allAddresses.addAll(trip.stops)
@@ -178,9 +165,7 @@ class TripDetailsFragment : Fragment() {
 
         binding.itineraryContent.removeAllViews()
 
-        // 👉 NOUVELLE LOGIQUE :
-        // On calcule la durée de CHAQUE segment avec LocationUtils.estimateTravelMinutes
-        // puis on les additionne pour construire les heures.
+
         val segmentMinutes = mutableListOf<Int>()
         var totalMinutes = 0
 
@@ -189,7 +174,7 @@ class TripDetailsFragment : Fragment() {
             val endAddr = allAddresses[i + 1]
 
             val distanceKm = LocationUtils.distanceBetweenAddresses(ctx, startAddr, endAddr)
-                ?: 1.0   // si geocodage échoue, on suppose 1 km
+                ?: 1.0
 
             val minutes = LocationUtils.estimateTravelMinutes(distanceKm)
             segmentMinutes.add(minutes)
@@ -198,7 +183,6 @@ class TripDetailsFragment : Fragment() {
 
         var currentTime = depTime
 
-        // Construire affichage itinéraire + mettre à jour currentTime
         for (i in allAddresses.indices) {
             val labelTime = currentTime
 
@@ -219,9 +203,7 @@ class TripDetailsFragment : Fragment() {
         binding.time.text = "Departure: $depTime • Arrival: $currentTime"
     }
 
-    // ---------------------------------------------------------
-    // 4. Booking
-    // ---------------------------------------------------------
+
 
     private fun bookThisTrip() {
         val trip = loadedTrip ?: run {
@@ -235,7 +217,6 @@ class TripDetailsFragment : Fragment() {
             return
         }
 
-        // empêcher de réserver son propre trajet (optionnel)
         if (currentUserId == trip.driverId) {
             Toast.makeText(requireContext(), "You cannot book your own trip", Toast.LENGTH_SHORT).show()
             return

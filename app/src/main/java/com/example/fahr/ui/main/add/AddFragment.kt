@@ -21,22 +21,18 @@ class AddFragment : Fragment() {
     private lateinit var binding: FragmentAddBinding
     private val stops = mutableListOf<String>()
 
-    // 🔹 Firestore instance (using KTX)
     private val firestore by lazy { Firebase.firestore }
 
     // ---------- REGEX / VALIDATION ----------
 
-    // Adresse : lettres (accentuées ok), chiffres, espace, ., , ' / -
-    // longueur 5 à 120 caractères
     private val ADDRESS_REGEX = Regex(
         pattern = """^[\p{L}\p{N}\s,.'’/\-#()°]+$"""
     )
 
-    // Heure : HH:mm (24h)
     private val TIME_REGEX =
         Regex("""^([01]\d|2[0-3]):[0-5]\d$""")
 
-    // Date : jj/MM/aaaa
+    // jj/MM/aaaa
     private val DATE_REGEX =
         Regex("""^([0-2]\d|3[01])/(0\d|1[0-2])/\d{4}$""")
 
@@ -49,7 +45,6 @@ class AddFragment : Fragment() {
     private fun isValidDate(date: String): Boolean =
         DATE_REGEX.matches(date)
 
-    // ---------- ANDROID LIFECYCLE ----------
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,12 +53,10 @@ class AddFragment : Fragment() {
     ): View {
         binding = FragmentAddBinding.inflate(inflater, container, false)
 
-        // "Add a stop" -> affiche le petit formulaire
         binding.textAddStop.setOnClickListener {
             binding.addStopForm.visibility = View.VISIBLE
         }
 
-        // Bouton "Confirm stop"
         binding.buttonConfirmStop.setOnClickListener {
             val stopAddress = binding.inputStopAddress.text.toString().trim()
 
@@ -81,16 +74,13 @@ class AddFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // Ajoute dans la liste + dans l'UI
             stops.add(stopAddress)
             addStopRow(stopAddress)
 
-            // Reset input + cache le formulaire
             binding.inputStopAddress.text?.clear()
             binding.addStopForm.visibility = View.GONE
         }
 
-        // Bouton principal "Add trip"
         binding.buttonAddTrip.setOnClickListener {
             createTrip()
         }
@@ -98,11 +88,8 @@ class AddFragment : Fragment() {
         return binding.root
     }
 
-    // ---------- UI pour les stops ----------
 
-    /**
-     * Ajoute une ligne visuelle pour un stop avec bouton delete.
-     */
+
     private fun addStopRow(stopAddress: String) {
         val inflater = LayoutInflater.from(requireContext())
         val stopView = inflater.inflate(R.layout.item_stop, binding.stopsContainer, false)
@@ -127,19 +114,13 @@ class AddFragment : Fragment() {
         updateStopsTitleVisibility()
     }
 
-    /**
-     * Affiche ou cache "Stops added" selon s'il y a des stops ou pas.
-     */
     private fun updateStopsTitleVisibility() {
         binding.stopsTitle.visibility =
             if (stops.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    // ---------- CRÉATION DU TRIP ----------
 
-    /**
-     * Valide le formulaire, construit le payload et envoie à Firestore.
-     */
+
     private fun createTrip() {
         val time = binding.inputTime.text.toString().trim()
         val dep = binding.inputDeparture.text.toString().trim()
@@ -149,7 +130,6 @@ class AddFragment : Fragment() {
 
 
 
-        // 🔎 Validation heure
         if (!isValidTime(time)) {
             Toast.makeText(
                 requireContext(),
@@ -159,7 +139,6 @@ class AddFragment : Fragment() {
             return
         }
 
-        // 🔎 Validation adresses
         if (!isValidAddress(dep)) {
             Toast.makeText(
                 requireContext(),
@@ -178,7 +157,6 @@ class AddFragment : Fragment() {
             return
         }
 
-        // 🔎 Validation stops (au cas où tu veux empêcher des vieux stops invalides)
         for (s in stops) {
             if (!isValidAddress(s)) {
                 Toast.makeText(
@@ -190,14 +168,12 @@ class AddFragment : Fragment() {
             }
         }
 
-        // 🔎 Validation price
         val price = priceText.toDoubleOrNull()
         if (price == null || price <= 0.0) {
             Toast.makeText(requireContext(), "Please enter a valid price", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Construire le payload pour l'écran de succès
         val payload = TripPayload(
             departureTime = time,
             departureAddress = dep,
@@ -206,10 +182,8 @@ class AddFragment : Fragment() {
             price = price
         )
 
-        // Désactive le bouton pour éviter plusieurs clics
         binding.buttonAddTrip.isEnabled = false
 
-        // Document Firestore
         val tripMap = hashMapOf(
             "departureTime" to time,
             "departureAddress" to dep,
